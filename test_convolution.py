@@ -13,34 +13,10 @@ from astropy.wcs import WCS
 
 from scipy.ndimage.filters import convolve
 
-
-
-
-def testRowFrac(datapath):        
-    """Test that changing column fraction moves flux around"""
-
-    obj = prf.TessPrf(datapath)
-    
-    img1 = obj.getPrfAtColRow(123.0, 456, 1,1,1)
-    
-    for frac in np.linspace(0, .9, 11):
-        img2 = obj.getPrfAtColRow(123.0, 456.0 + frac, 1,1,1)
-        delta = img2 - img1
-        
-        prfPlot(img1, delta)
-        
-        #For TESS, PRFs are 13x13. Check the flux near the centre
-        #is moving from lower columns to higher ones
-        assert delta[6,6] >= 0, delta[6,6]
-        assert delta[7,6] >= 0, delta[7,6]
-        assert delta[5,6] <= 0, delta[5,6]
-
-
-
 def Interp_PRF(X,Y,Camera,CCD):
     pathToMatFile = './data/prf/'
     obj = prf.TessPrf(pathToMatFile)
-    PRF = obj.getPrfAtColRow(123.0, 456, 1,Camera,CCD)
+    PRF = obj.getPrfAtColRow(X, Y, 1,Camera,CCD)
     x2 = np.arange(0,PRF.shape[1]-1,0.01075)
     y2 = np.arange(0,PRF.shape[0]-1,0.01075)
 
@@ -110,7 +86,7 @@ def Run_convolution(Path,Camera,CCD,PSsize=1000):
 	tess_image, tess_wcs = Get_TESS_image(Path,1,Camera,CCD)
 	x = tess_image.shape[1]/2
 	y = tess_image.shape[0]/2
-	prf = Interp_PRF(x,y,Camera,CCD)
+	keranl = Interp_PRF(x,y,Camera,CCD)
 	ra, dec = tess_wcs.all_pix2world(x,y,1)
 
 	size = PSsize
@@ -119,7 +95,7 @@ def Run_convolution(Path,Camera,CCD,PSsize=1000):
 
 	ps = fh[0].data
 
-	test = convolve(ps,prf)
+	test = convolve(ps,kernal)
 
 
 	np.save('test_PS_TESS.npy',test)
