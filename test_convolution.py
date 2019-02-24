@@ -35,25 +35,12 @@ def testRowFrac(datapath):
         assert delta[7,6] >= 0, delta[7,6]
         assert delta[5,6] <= 0, delta[5,6]
 
-        
-def prfPlot(refImg, delta):
-        
-	kwargs = {'origin':'bottom', 'interpolation':'nearest', 'cmap':plt.cm.YlGnBu_r}
-	plt.clf()
-	plt.subplot(121)
-	plt.imshow(refImg, **kwargs)
-	plt.colorbar()
 
-	plt.subplot(122)
-	kwargs['cmap'] = plt.cm.PiYG
-	plt.imshow(delta, **kwargs)  
-	vm = max( np.fabs( [np.min(delta), np.max(delta)] ))
-	#        vm = 1e-2
-	plt.clim(-vm, vm)
-	plt.colorbar()
-	plt.pause(.1)
 
-def Interp_PRF(PRF):
+def Interp_PRF(X,Y,Camera,CCD):
+    pathToMatFile = './data/prf/'
+    obj = prf.TessPrf(pathToMatFile)
+    PRF = obj.getPrfAtColRow(123.0, 456, 1,Camera,CCD)
     x2 = np.arange(0,PRF.shape[1]-1,0.01075)
     y2 = np.arange(0,PRF.shape[0]-1,0.01075)
 
@@ -119,9 +106,12 @@ def Get_TESS_image(Path, Sector, Camera, CCD, Time = None):
         pass
 
 
-def Run_convolution(Path,PSsize=1000):
-	tess_image, tess_wcs = Get_TESS_image(Path,2,1,2)
-	ra, dec = tess_wcs.all_pix2world(tess_image.shape[1]/2,tess_image.shape[0]/2,1)
+def Run_convolution(Path,Camera,CCD,PSsize=1000):
+	tess_image, tess_wcs = Get_TESS_image(Path,1,Camera,CCD)
+	x = tess_image.shape[1]/2
+	y = tess_image.shape[0]/2
+	prf = Interp_PRF(x,y,Camera,CCD)
+	ra, dec = tess_wcs.all_pix2world(x,y,1)
 
 	size = PSsize
 	fitsurl = geturl(ra, dec, size=size, filters="i", format="fits")
@@ -129,7 +119,7 @@ def Run_convolution(Path,PSsize=1000):
 
 	ps = fh[0].data
 
-	test = convolve(ps,kernal)
+	test = convolve(ps,prf)
 
 
 	np.save('test_PS_TESS.npy',test)
