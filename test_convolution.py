@@ -88,7 +88,7 @@ def Run_convolution(Path,Camera,CCD,PSsize=1000):
 	tess_image, tess_wcs = Get_TESS_image(Path,1,Camera,CCD)
 	x = tess_image.shape[1]/2
 	y = tess_image.shape[0]/2
-	keranl = Interp_PRF(x,y,Camera,CCD)
+	kernal = Interp_PRF(x,y,Camera,CCD)
 	ra, dec = tess_wcs.all_pix2world(x,y,1)
 	print('({},{})'.format(ra,dec))
 	size = PSsize
