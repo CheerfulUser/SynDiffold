@@ -5,6 +5,8 @@ sys.path
 sys.path.append('./dave/diffimg/')
 import tessprf as prf
 
+from PS_image_download import *
+
 from scipy import interpolate
 
 from glob import glob
