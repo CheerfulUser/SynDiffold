@@ -93,13 +93,12 @@ def Run_convolution(Path,Camera,CCD,PSsize=1000):
 	print('({},{})'.format(ra,dec))
 	size = PSsize
 	fitsurl = geturl(ra, dec, size=size, filters="i", format="fits")
-	fh = fits.open(fitsurl[0])
-	print(fh)
-	ps = fh[0].data
+	if len(fitsurl) > 0:
+		fh = fits.open(fitsurl[0])
+		ps = fh[0].data
 
-	test = convolve(ps,kernal)
-
-
-	np.save('test_PS_TESS.npy',test)
-
-	return 'Convolved'
+		test = convolve(ps,kernal)
+		np.save('test_PS_TESS.npy',test)
+		return 'Convolved'
+	else:
+		return 'No PS images for RA = {}, DEC = {}'.format(ra,dec)
