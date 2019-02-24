@@ -120,7 +120,7 @@ def Get_TESS_image(Path, Sector, Camera, CCD, Time = None):
 
 
 def Run_convolution(Path,PSsize=1000):
-	tess_image, tess_wcs = Get_TESS_image('/Users/ryanr/Documents/PhD/coding/TPR/data/',2,1,2)
+	tess_image, tess_wcs = Get_TESS_image(Path,2,1,2)
 	ra, dec = tess_wcs.all_pix2world(tess_image.shape[1]/2,tess_image.shape[0]/2,1)
 
 	size = PSsize
