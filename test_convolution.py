@@ -90,11 +90,11 @@ def Run_convolution(Path,Camera,CCD,PSsize=1000):
 	y = tess_image.shape[0]/2
 	keranl = Interp_PRF(x,y,Camera,CCD)
 	ra, dec = tess_wcs.all_pix2world(x,y,1)
-
+	print('({},{})'.format(ra,dec))
 	size = PSsize
 	fitsurl = geturl(ra, dec, size=size, filters="i", format="fits")
 	fh = fits.open(fitsurl[0])
-
+	print(fh)
 	ps = fh[0].data
 
 	test = convolve(ps,kernal)
