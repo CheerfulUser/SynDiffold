@@ -9,7 +9,7 @@ from scipy import interpolate
 
 from glob import glob
 from astropy.io import fits
-from astropy.wcs import WC
+from astropy.wcs import WCS
 
 from scipy.ndimage.filters import convolve
 
