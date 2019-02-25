@@ -16,6 +16,7 @@ from astropy.wcs import WCS
 from scipy.ndimage.filters import convolve
 
 import tracemalloc
+from scipy import signal
 
 def Interp_PRF(X,Y,Camera,CCD):
 	"""
@@ -141,7 +142,8 @@ def Run_convolution(Path,Sector,Camera,CCD,PSsize=1000):
 		ps = fh[0].data
 		try:
 			Print_snapshot()
-			test = convolve(ps,kernal)
+			test = signal.fftconvolve(ps, kernal)
+			#test = convolve(ps,kernal)
 			np.save('test_PS_TESS.npy',test)
 		except MemoryError:
 			raise MemoryError("The convolution is too large, try a smaller array.")
