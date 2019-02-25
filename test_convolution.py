@@ -19,7 +19,7 @@ import tracemalloc
 
 def Interp_PRF(X,Y,Camera,CCD):
 	"""
-	
+	Create a TESS PSF interpolated to the PS scale from the PSF models.
 	"""
 
     pathToMatFile = './data/prf/'
