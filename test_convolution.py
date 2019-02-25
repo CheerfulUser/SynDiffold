@@ -1,5 +1,6 @@
 # Import the TESS PRF modelling from DAVE
 import numpy as np
+import matplotlib.pyplot as plt
 import sys
 sys.path
 sys.path.append('./dave/diffimg/')
@@ -42,7 +43,7 @@ def Interp_PRF(X,Y,Camera,CCD):
 	z = list(z[np.isfinite(z)])
 
 	znew = interpolate.griddata((x, y), z, (x2[None,:], y2[:,None]), method='cubic')
-	kernal = znew[300:700,300:700]
+	kernal = znew#[300:700,300:700]
 	return kernal
 
 def Get_TESS_image(Path, Sector, Camera, CCD, Time = None):
@@ -98,7 +99,71 @@ def Print_snapshot():
 		print(stat)
 	return
 
-def Run_convolution(Path,Sector,Camera,CCD,PSsize=1000):
+def Plot_comparison(PSorig,PSconv,Downsamp = []):
+	"""
+	Makes plots for the convolution process.
+	"""
+	if len(Downsamp) == 0:
+		plt.figure()
+		
+		plt.subplot(1, 2, 1)
+		plt.title('PS original')
+		plt.imshow(PSorig,origin='lower')#,vmax=1000)
+		#plt.colorbar()
+
+		plt.subplot(1, 2, 2)
+		plt.title('PS convolved')
+		plt.imshow(PSconv,origin='lower')#,vmax=1000)
+		plt.tight_layout()
+		#plt.colorbar()
+
+		savename = 'Convolved_PS.pdf'
+		plt.savefig(savename)
+		return 'Plotted'
+	else:
+		plt.figure(figsize=(10, 4))
+		
+		plt.subplot(1, 3, 1)
+		plt.title('PS original')
+		plt.imshow(PSorig,origin='lower')#,vmax=1000)
+		#plt.colorbar()
+
+		plt.subplot(1, 3, 2)
+		plt.title('PS convolved')
+		plt.imshow(PSconv,origin='lower')#,vmax=1000)
+		#plt.colorbar()
+
+		plt.subplot(1, 3, 3)
+		plt.title('TESS resolution')
+		plt.imshow(Downsamp,origin='lower')#,vmax=1000)
+		plt.tight_layout()
+
+		savename = 'Convolved_PS.pdf'
+		plt.savefig(savename)
+		return 'Plotted'
+
+def Downsample(PSconv):
+	"""
+	Downsamples the PS image to the resolution of TESS.
+	"""
+	PSpixel = 0.258 # arcseconds per pixel 
+	TESSpixel = 21 # arcseconds per pixel 
+	Scale = TESSpixel/PSpixel
+	xnew = np.arange(PSconv.shape[1]/Scale)
+	ynew = np.arange(PSconv.shape[0]/Scale)
+	TESS_resolution = np.zeros((int(PSconv.shape[0]/Scale),int(PSconv.shape[1]/Scale)))
+	for i in range(len(ynew)-1):
+		ystart = int(i*Scale)
+		yend = int(ystart + Scale)
+		for j in range(len(xnew)-1):
+			xstart = int(j*Scale)
+			xend = int(xstart + Scale)
+			TESS_resolution[i,j] = np.nansum(PSconv[ystart:yend,xstart:xend])
+	return TESS_resolution
+	
+
+
+def Run_convolution(Path,Sector,Camera,CCD,PSsize=1000,Downsamp=False,Plot=False):
 	"""
 	Wrapper function to convolve a PS image with the TESS PSF and return the convolved array.
 	Inputs
@@ -127,12 +192,12 @@ def Run_convolution(Path,Sector,Camera,CCD,PSsize=1000):
 	"""
 	tracemalloc.start()
 	tess_image, tess_wcs = Get_TESS_image(Path,Sector,Camera,CCD)
-	Print_snapshot()
+	#Print_snapshot()
 
 	x = tess_image.shape[1]/2
 	y = tess_image.shape[0]/2
 	kernal = Interp_PRF(x,y,Camera,CCD)
-	Print_snapshot()
+	#Print_snapshot()
 	ra, dec = tess_wcs.all_pix2world(x,y,1)
 	print('({},{})'.format(ra,dec))
 	size = PSsize
@@ -141,13 +206,22 @@ def Run_convolution(Path,Sector,Camera,CCD,PSsize=1000):
 		fh = fits.open(fitsurl[0])
 		ps = fh[0].data
 		try:
-			Print_snapshot()
-			test = signal.fftconvolve(ps, kernal)
+			#Print_snapshot()
+			test = signal.fftconvolve(ps, kernal,mode='same')
+			if Downsamp == True:
+				down = Downsample(test)
 			#test = convolve(ps,kernal)
 			np.save('test_PS_TESS.npy',test)
+			if Plot == True:
+				if Downsamp == True:
+					Plot_comparison(ps,test,Downsamp=down)
+				else:
+					Plot_comparison(ps,test)
 		except MemoryError:
 			raise MemoryError("The convolution is too large, try a smaller array.")
 
 		return 'Convolved'
 	else:
 		return 'No PS images for RA = {}, DEC = {}'.format(ra,dec)
+
+
