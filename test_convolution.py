@@ -15,7 +15,13 @@ from astropy.wcs import WCS
 
 from scipy.ndimage.filters import convolve
 
+import tracemalloc
+
 def Interp_PRF(X,Y,Camera,CCD):
+	"""
+	
+	"""
+
     pathToMatFile = './data/prf/'
     obj = prf.TessPrf(pathToMatFile)
     PRF = obj.getPrfAtColRow(X, Y, 1,Camera,CCD)
@@ -83,12 +89,50 @@ def Get_TESS_image(Path, Sector, Camera, CCD, Time = None):
         raise FileExistsError("TESS file does not exist: '{}'".format(File))
         pass
 
+def Print_snapshot():
+	snapshot = tracemalloc.take_snapshot()
+	top_stats = snapshot.statistics('lineno')
 
-def Run_convolution(Path,Camera,CCD,PSsize=1000):
-	tess_image, tess_wcs = Get_TESS_image(Path,1,Camera,CCD)
+	print("[ Top 5 ]")
+	for stat in top_stats[:5]:
+	    print(stat)
+    return
+
+def Run_convolution(Path,Sector,Camera,CCD,PSsize=1000):
+	"""
+	Wrapper function to convolve a PS image with the TESS PSF and return the convolved array.
+	Inputs
+    ------
+    Path: str
+        Path to FFIs
+    Sector: int
+        Sector of the FFI
+    Camera: int
+        Camera of the FFI
+    CCD: int
+        CCD of the FFI
+    PSsize: int
+    	Size in pixels of the PS image. 1 pixel corresponds to 0.024''.
+        
+    Saves
+    -----
+    test_PS_TESS: array
+        PS image convolved with the appropriate TESS PSF
+		
+    Raises
+    ------
+    MemoryError
+        There is not enough memory for this operation 
+
+	"""
+	tracemalloc.start()
+	tess_image, tess_wcs = Get_TESS_image(Path,Sector,Camera,CCD)
+	Print_snapshot()
+
 	x = tess_image.shape[1]/2
 	y = tess_image.shape[0]/2
 	kernal = Interp_PRF(x,y,Camera,CCD)
+	Print_snapshot()
 	ra, dec = tess_wcs.all_pix2world(x,y,1)
 	print('({},{})'.format(ra,dec))
 	size = PSsize
@@ -96,9 +140,13 @@ def Run_convolution(Path,Camera,CCD,PSsize=1000):
 	if len(fitsurl) > 0:
 		fh = fits.open(fitsurl[0])
 		ps = fh[0].data
+		try:
+			Print_snapshot()
+			test = convolve(ps,kernal)
+			np.save('test_PS_TESS.npy',test)
+		except MemoryError:
+			raise MemoryError("The convolution is too large, try a smaller array.")
 
-		test = convolve(ps,kernal)
-		np.save('test_PS_TESS.npy',test)
 		return 'Convolved'
 	else:
 		return 'No PS images for RA = {}, DEC = {}'.format(ra,dec)
