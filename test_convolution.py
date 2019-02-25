@@ -21,29 +21,28 @@ def Interp_PRF(X,Y,Camera,CCD):
 	"""
 	Create a TESS PSF interpolated to the PS scale from the PSF models.
 	"""
+	pathToMatFile = './data/prf/'
+	obj = prf.TessPrf(pathToMatFile)
+	PRF = obj.getPrfAtColRow(X, Y, 1,Camera,CCD)
+	x2 = np.arange(0,PRF.shape[1]-1,0.01075)
+	y2 = np.arange(0,PRF.shape[0]-1,0.01075)
 
-    pathToMatFile = './data/prf/'
-    obj = prf.TessPrf(pathToMatFile)
-    PRF = obj.getPrfAtColRow(X, Y, 1,Camera,CCD)
-    x2 = np.arange(0,PRF.shape[1]-1,0.01075)
-    y2 = np.arange(0,PRF.shape[0]-1,0.01075)
+	x = np.arange(0,PRF.shape[1],1)
+	y = np.arange(0,PRF.shape[0],1)
+	X, Y = np.meshgrid(x,y)
 
-    x = np.arange(0,PRF.shape[1],1)
-    y = np.arange(0,PRF.shape[0],1)
-    X, Y = np.meshgrid(x,y)
+	x=X.ravel()              #Flat input into 1d vector
+	y=Y.ravel()
 
-    x=X.ravel()              #Flat input into 1d vector
-    y=Y.ravel()
+	z = PRF
+	z = z.ravel()
+	x = list(x[np.isfinite(z)])
+	y = list(y[np.isfinite(z)])
+	z = list(z[np.isfinite(z)])
 
-    z = PRF
-    z = z.ravel()
-    x = list(x[np.isfinite(z)])
-    y = list(y[np.isfinite(z)])
-    z = list(z[np.isfinite(z)])
-
-    znew = interpolate.griddata((x, y), z, (x2[None,:], y2[:,None]), method='cubic')
-    kernal = znew[300:700,300:700]
-    return kernal
+	znew = interpolate.griddata((x, y), z, (x2[None,:], y2[:,None]), method='cubic')
+	kernal = znew[300:700,300:700]
+	return kernal
 
 def Get_TESS_image(Path, Sector, Camera, CCD, Time = None):
     """
@@ -95,8 +94,8 @@ def Print_snapshot():
 
 	print("[ Top 5 ]")
 	for stat in top_stats[:5]:
-	    print(stat)
-    return
+		print(stat)
+	return
 
 def Run_convolution(Path,Sector,Camera,CCD,PSsize=1000):
 	"""
